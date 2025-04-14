@@ -1,0 +1,26 @@
+name: Rebuild Static Site on Droplet
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔐 SSH into Droplet and Rebuild Site
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            echo "🔁 Starting rebuild process on droplet..."
+            cd /root/public-site
+            git pull
+            rm -rf .next
+            pm2 delete public-site || true
+            npm install
+            npm run build
+            pm2 start npm --name public-site -- start
+            echo "✅ Rebuild complete and live!"
